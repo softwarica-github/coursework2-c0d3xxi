@@ -14,6 +14,8 @@ from tkinter import ttk
 from tkinter.font import Font
 from tkinter import messagebox
 
+#from logdisplayer import logdisplayer_fun
+
 #logo path
 
 logo_path="det2.ico"
@@ -123,6 +125,25 @@ def scan_res():
         elapsed_time = end_time-start_time
         
         op_results=("{} \n\nTarget Name: {} \n\n{} OPEN PORTS FOUND!!!\n\nPorts open on: {} \n\nTime elapsed: {} seconds.\n").format(c_dt,namebox.get(),len(open_ports),open_ports,elapsed_time)
+
+        #Writing output to csv file
+        
+        with open(file_path, "a", newline="") as file_op:
+            
+            writer= csv.writer(file_op)
+           
+            a=c_dt
+            b=namebox.get()
+            c=ipbox.get()
+            d=spbox.get()
+            e=epbox.get()
+            f=open_ports
+            g=elapsed_time
+            data=[a,b,c,d,e,f,g]
+            writer.writerow(data)
+        file_op.close()
+              
+###########################################################################################################################################################################################################################################################################################################################################
         
         res_window=Tk()
         res_window.geometry("1200x720")
@@ -148,7 +169,8 @@ def scan_res():
         lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
 
         res_window.mainloop()
-
+        
+        
 #for view logs button:
 def prev_logs():
     msg_vlogs=messagebox.askyesno("View Logs", "Do you wish to view previous logs??")
@@ -239,9 +261,7 @@ def exit_prog():
         pass
   
 
-
-
- #widgets:
+#widgets:
 
 lbl_header=Label(main_window, text = "🔎ort Scanner",bg="black", fg="Green", font=header_font)
 lbl_header.place(relx=0.5,rely=0.110,anchor=CENTER)
@@ -311,5 +331,46 @@ bt_reset.grid(row=0,column=2,padx=30)    #place(relx=0.440,rely=0.810)
 bt_exit=ttk.Button(button_frame, text="Exit", command= exit_prog)
 bt_exit.grid(row=0,column=3,padx=30)     #place(relx=0.695,rely=0.810)
 
+#right click pop-up menu:
+
+rt_clk = Menu(main_window, tearoff=0)
+
+rt_clk.add_command(label="New Window")
+rt_clk.add_separator()
+rt_clk.add_command(label="Scan", command= scan_res)
+rt_clk.add_command(label="View Logs", command= prev_logs)
+rt_clk.add_command(label="Reset", command= re_set)
+rt_clk.add_separator()
+rt_clk.add_command(label="Exit", command= exit_prog)
+
+def menupopup(event):
+   
+   try:
+      rt_clk.tk_popup(event.x_root, event.y_root, 0)
+   
+   finally:
+      rt_clk.grab_release()
+    
+main_window.bind("<Button-3>", menupopup)
+
+#footer:
+
+lbl_CR=Label(main_window, text="Copyright © 2022   Parth Dhungana, All Rights Reserved.", bg="Green", fg="black", padx=150, font=footer_font)
+lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
+
+#MenuBar:
+menubar=Menu(main_window)
+
+filemenu=Menu(menubar,tearoff=0)
+filemenu.add_command(label="View Logs",command=prev_logs)
+filemenu.add_separator()
+filemenu.add_command(label="Exit",command=exit_prog)
+
+menubar.add_cascade(label="Menu",menu=filemenu)
+
+
+main_window.config(menu=menubar)
+
+#screen loop:
 
 main_window.mainloop()
