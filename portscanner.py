@@ -74,5 +74,13 @@ button_frame.place(relx=0.5,rely=0.850, anchor=CENTER)
 bt_scan=ttk.Button(button_frame, text="Scan 🔎", command=scan_res)
 bt_scan.grid(row=0,column=0,padx=30)   #place(relx=0.185,rely=0.810)
 
+bt_logs=ttk.Button(button_frame, text="View Logs", command= prev_logs)
+bt_logs.grid(row=0,column=1,padx=30)
+
+bt_reset=ttk.Button(button_frame, text="Reset", command=re_set)
+bt_reset.grid(row=0,column=2,padx=30)    #place(relx=0.440,rely=0.810)
+
+bt_exit=ttk.Button(button_frame, text="Exit", command= exit_prog)
+bt_exit.grid(row=0,column=3,padx=30)     #place(relx=0.695,rely=0.810)
 
 main_window.mainloop()
