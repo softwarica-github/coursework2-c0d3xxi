@@ -1,3 +1,14 @@
+
+########## PORT SCANNER - Developed by Parth Dhungana ##############
+
+#importing modules
+
+import csv
+import socket
+import time
+import datetime
+import threading
+from queue import Queue
 from tkinter import *
 from tkinter import ttk
 from tkinter.font import Font
@@ -5,7 +16,7 @@ from tkinter import messagebox
 
 #logo path
 
-logo_path="det2.ico"
+logo_path=""
 
 main_window=Tk()
 main_window.geometry("600x600")
