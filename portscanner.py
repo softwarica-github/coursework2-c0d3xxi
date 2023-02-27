@@ -123,6 +123,121 @@ def scan_res():
         elapsed_time = end_time-start_time
         
         op_results=("{} \n\nTarget Name: {} \n\n{} OPEN PORTS FOUND!!!\n\nPorts open on: {} \n\nTime elapsed: {} seconds.\n").format(c_dt,namebox.get(),len(open_ports),open_ports,elapsed_time)
+        
+        res_window=Tk()
+        res_window.geometry("1200x720")
+        res_window.resizable(False,False)
+
+        res_window.title("Port Scanner (Scan Results)")
+        res_window.iconbitmap(logo_path)
+        res_window.configure(bg="black")
+        
+        lbl_header1=Label(res_window, text = "Scan results 🔎",bg="black", fg="Green", font=("Papyrus", 30,"bold"))
+        lbl_header1.place(relx=0.5,rely=0.110,anchor=CENTER)
+       
+        #output display
+        
+        lbl_op=Label(res_window, text=op_results, fg="Black", bg="Green",font=("Papyrus", 16,"bold"))
+        lbl_op.place(relx=0.5,rely=0.505, anchor=CENTER)
+        
+        bt_exit_res=ttk.Button(res_window, text="Exit", command= res_window.destroy)
+        bt_exit_res.place(relx=0.695,rely=0.810)
+        
+        #op_text.place(relx=0.5,rely=0.5,anchor=CENTER)
+        lbl_CR=Label(res_window, text="Copyright © 2022   Parth Dhungana, All Rights Reserved.", bg="Green", fg="black", padx=400, font=("Papyrus", 11,"bold"))
+        lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
+
+        res_window.mainloop()
+
+#for view logs button:
+def prev_logs():
+    msg_vlogs=messagebox.askyesno("View Logs", "Do you wish to view previous logs??")
+    
+    if msg_vlogs==True:
+        
+        log_window=Tk()
+        log_window.geometry("1555x900")
+        log_window.resizable(False,False)
+
+        log_window.title("Port Scanner (View Logs)")
+        log_window.iconbitmap(logo_path)
+        log_window.configure(bg="white")
+
+        #Scrollable page:
+
+        #Frame 1:
+        frame1 = Frame(log_window)
+        frame1.pack(fill=BOTH, expand=1)
+
+        #Canvas1:
+        canvas1 = Canvas(frame1)
+        canvas1.pack(side=LEFT, fill=BOTH, expand=1)
+
+        #Scrollbar:
+        scroll_bar = ttk.Scrollbar(frame1, orient = VERTICAL, command = canvas1.yview)
+        scroll_bar.pack(side=RIGHT, fill=Y)
+
+        #Canvas2:
+        canvas1.configure(yscrollcommand=scroll_bar.set)
+        
+        #binding configure to event e which is the action of scrolling in lambda function
+        canvas1.bind("<Configure>", lambda e: canvas1.configure(scrollregion=canvas1.bbox("all")))
+
+        #Frame 2:
+        frame2 = Frame(canvas1)
+
+        #Add frame 2 inside canvas:
+        canvas1.create_window((0,0), window= frame2, anchor="nw")
+        
+        #Output CSV file
+        
+        with open(file_path, newline="") as logged_file:
+            reader= csv.reader(logged_file)
+            i=0
+            for row in reader:
+                
+                j=0
+                for col in row:
+                    
+                    label_op = Label(frame2, width = 200, height=2, text=row, relief= RIDGE, bg="Black", fg="White", font=("Helvetica", 10,"bold"))
+                    label_op.grid(row=i, column =0)
+                    j=j+1
+                i=i+1
+        
+        logged_file.close()
+        label_details = Label(log_window, text = "Log Details 🔎:", fg="White", bg="Black", font=("Papyrus", 30, "bold")).place(relx=0.001, rely = 0.00175)
+        lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
+        log_window.mainloop()
+    else:
+        pass
+
+#for reset button:
+
+def re_set():
+    if ipbox.get()=="" and spbox.get()=="" and epbox.get()=="" and namebox.get()=="":
+        pass
+    
+    elif ipbox.get()!="" or spbox.get()!="" or epbox.get()!="" or namebox.get():
+        msg_re=messagebox.askyesno("RESET", "Are you sure you want to reset all the feilds??")
+        
+        if msg_re==True:
+            ipbox.set("")
+            spbox.set("")
+            epbox.set("")
+            namebox.set("")
+            msg_done=messagebox.showinfo("RESET","Reset successful!!")
+        else:
+            pass
+    
+#for exit button:
+
+def exit_prog():
+    msg_ex=messagebox.askyesno("EXIT", "Are you sure you want to exit 🔎ort Scanner??")
+    if msg_ex==True:
+        exit()
+    else:
+        pass
+  
 
 
 
