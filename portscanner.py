@@ -1,20 +1,28 @@
-
 ########## PORT SCANNER - Developed by Parth Dhungana ##############
 
 #importing modules
-
 import csv
 import socket
 import time
 import datetime
 import threading
+import MySQLdb
+import sys
 from queue import Queue
+import customtkinter
 from tkinter import *
 from tkinter import ttk
 from tkinter.font import Font
 from tkinter import messagebox
 
-#from logdisplayer import logdisplayer_fun
+#Customization Themes
+customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
+
+# #Database connection
+
+db = MySQLdb.connect(host="localhost",user = 'root', password='', database='portscanner')
+cursor1= db.cursor()
 
 #logo path
 
@@ -24,14 +32,13 @@ logo_path="det2.ico"
 
 file_path="logs.csv"
 
-
 #main windown (root) properties:
 
-main_window=Tk()
-main_window.geometry("600x600")
+main_window=customtkinter.CTk()
+main_window.geometry("600x700")
 main_window.resizable(False,False)
 main_window.title("Port Scanner")
-main_window.iconbitmap(logo_path)
+#main_window.iconbitmap(logo_path)
 main_window.configure(bg="black")          
 
 #name var for text entry:
@@ -42,12 +49,12 @@ spbox = IntVar()
 epbox = IntVar()
 
 #fonts:
-
-header_font= Font(family="Papyrus", size=30, weight="bold")
-sub_font=Font(family="Papyrus", size=20, weight="bold",underline=1)
-normal_font=Font(family="Papyrus", size=16, weight="bold")
-input_font=Font(family="Papyrus", size=16, weight="bold")
-footer_font=Font(family="Papyrus", size=11,weight="bold")
+#font=customtkinter.CTkFont(family='Papyrus', size=30, weight="bold")
+header_font=customtkinter.CTkFont(family="Papyrus", size=35, weight="bold")
+sub_font=customtkinter.CTkFont(family="Papyrus", size=25, weight="bold",underline=1)
+normal_font=customtkinter.CTkFont(family="Papyrus", size=21, weight="bold")
+input_font=customtkinter.CTkFont(family="Papyrus", size=21, weight="bold")
+footer_font=customtkinter.CTkFont(family="Papyrus", size=16,weight="bold")
 
 results = StringVar()
 #functions for buttons:
@@ -56,9 +63,11 @@ results = StringVar()
 
 def scan_res():
     
-    if namebox.get()=="" or ipbox.get()=="" or spbox.get()=="" or epbox.get()=="":
+    target = ipbox.get()
+    
+    if namebox.get()=="" or target=="" or spbox.get()=="" or epbox.get()=="":
         msg=messagebox.showerror("ERROR", "Empty feild(s)!\n\nPlease fill out all the feilds with the correct details!!")
-        
+            
     elif spbox.get()>epbox.get():
         msg=messagebox.showerror("ERROR", "ERROR!!\n\nValue of start port cannot be greater than that of end port!!")
         
@@ -66,110 +75,109 @@ def scan_res():
         msg=messagebox.showerror("ERROR", "ERROR!!\n\nValue of end port must be greater than 1 and less than or equal to 65,535!!")
     
     elif spbox.get()<0 or epbox.get()<0:
-        msg=messagebox.showerror("ERROR", "ERROR!!\n\nValue of start port and end port must be a positive integer between 0 and 65,535!!")
-        
+        msg=messagebox.showerror("ERROR", "ERROR!!\n\nValue of start port and end port must be a positive integer between 0 and 65,535!!")    
     
 ###########################################################################################################################################################################################################################################################################################################################################
 
     else:
 
-                                                                                                    #PORT SCANNER (MAIN)
+        target = target.strip()
+         # Split the IP into 4 octets
+        octet = target.split('.')
 
-        target = ipbox.get()
-        queue = Queue()
-        open_ports=[]
-        
-        display_dt=datetime.datetime.now()
-        c_dt=display_dt.strftime("%c")
-        
-        start_time = time.time()
-
-        def scanner(port):
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((target, port))
-                return True
+        # Check if each octet is an integer
+        if all(octet[i].isnumeric() for i in range(4)) and len(octet) == 4:
+        # If all 4 octets are ints put the IP back together
+            target = '.'.join(octet)                                                                                           
             
-            except:
-                return False
-        
-        def queue_range(port_lst):
-            for port in port_lst:
-                queue.put(port)
+            
+        #PORT SCANNER (MAIN)
+
+            queue = Queue()
+            open_ports=[]
+            
+            display_dt=datetime.datetime.now()
+            c_dt=display_dt.strftime("%c")
+            
+            start_time = time.time()
+
+            def scanner(port):
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect((target, port))
+                    return True
                 
-        def thread_func():
-            while not queue.empty():
-                port = queue.get()
-                if scanner(port):
-                    open_scanned=print("Port #{} is open!".format(port))
-                    open_ports.append(port)
+                except:
+                    return False
+            
+            def queue_range(port_lst):
+                for port in port_lst:
+                    queue.put(port)
                     
+            def thread_func():
+                while not queue.empty():
+                    port = queue.get()
+                    if scanner(port):
+                        open_scanned=print("Port #{} is open!".format(port))
+                        open_ports.append(port)
+                        #return unittest
 
-        port_lst = range(spbox.get(),epbox.get()+1)
-        queue_range(port_lst)
+            port_lst = range(spbox.get(),epbox.get()+1)
+            queue_range(port_lst)
 
-        thread_lst = []
+            thread_lst = []
 
-        for t in range(1000):
-            thread=threading.Thread(target = thread_func)
-            thread_lst.append(thread)
+            for t in range(1000):
+                thread=threading.Thread(target = thread_func)
+                thread_lst.append(thread)
+                
+            for thread in thread_lst:
+                thread.start()
+                
+            for thread in thread_lst:
+                thread.join()
+
+            end_time = time.time()
             
-        for thread in thread_lst:
-            thread.start()
+            elapsed_time = end_time-start_time
             
-        for thread in thread_lst:
-            thread.join()
+            op_results=("{} \n\nTarget Name: {} \n\n{} OPEN PORTS FOUND!!!\n\nPorts open on: {} \n\nTime elapsed: {} seconds.\n").format(c_dt,namebox.get(),len(open_ports),open_ports,elapsed_time)
 
-        end_time = time.time()
-        
-        elapsed_time = end_time-start_time
-        
-        op_results=("{} \n\nTarget Name: {} \n\n{} OPEN PORTS FOUND!!!\n\nPorts open on: {} \n\nTime elapsed: {} seconds.\n").format(c_dt,namebox.get(),len(open_ports),open_ports,elapsed_time)
-
-        #Writing output to csv file
-        
-        with open(file_path, "a", newline="") as file_op:
+            #storing output to variables
             
-            writer= csv.writer(file_op)
-           
-            a=c_dt
-            b=namebox.get()
-            c=ipbox.get()
-            d=spbox.get()
-            e=epbox.get()
-            f=open_ports
-            g=elapsed_time
+            a=str(c_dt)
+            b=str(namebox.get())
+            c=str(ipbox.get())
+            d=str(spbox.get())
+            e=str(epbox.get())
+            f=str(open_ports)
+            g=str(elapsed_time)
             data=[a,b,c,d,e,f,g]
-            writer.writerow(data)
-        file_op.close()
-              
+
+            #Writing output to csv file
+          
+            with open(file_path, "a", newline="") as file_op:
+                
+                writer= csv.writer(file_op)
+
+                writer.writerow(data)
+            file_op.close()
+            
+            #Writing output to database
+
+            cursor1.execute('INSERT INTO `logs`(`date_time`, `name`, `ip`, `start_port`, `end_port`, `open_ports`, `time_taken`) VALUES(%s, %s, %s, %s, %s, %s, %s)', data)
+
+            
+            db.commit()
+
+            #Output
+            
+            messagebox.showinfo("Scan Result", op_results)
+
 ###########################################################################################################################################################################################################################################################################################################################################
-        
-        res_window=Tk()
-        res_window.geometry("1200x720")
-        res_window.resizable(False,False)
-
-        res_window.title("Port Scanner (Scan Results)")
-        res_window.iconbitmap(logo_path)
-        res_window.configure(bg="black")
-        
-        lbl_header1=Label(res_window, text = "Scan results 🔎",bg="black", fg="Green", font=("Papyrus", 30,"bold"))
-        lbl_header1.place(relx=0.5,rely=0.110,anchor=CENTER)
-       
-        #output display
-        
-        lbl_op=Label(res_window, text=op_results, fg="Black", bg="Green",font=("Papyrus", 16,"bold"))
-        lbl_op.place(relx=0.5,rely=0.505, anchor=CENTER)
-        
-        bt_exit_res=ttk.Button(res_window, text="Exit", command= res_window.destroy)
-        bt_exit_res.place(relx=0.695,rely=0.810)
-        
-        #op_text.place(relx=0.5,rely=0.5,anchor=CENTER)
-        lbl_CR=Label(res_window, text="Copyright © 2022   Parth Dhungana, All Rights Reserved.", bg="Green", fg="black", padx=400, font=("Papyrus", 11,"bold"))
-        lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
-
-        res_window.mainloop()
-        
+             
+        else:
+            msg=messagebox.showerror("ERROR", "You have entered an invalid IP!!\n Use format (xxx.xxx.xxx.xxx)")
         
 #for view logs button:
 def prev_logs():
@@ -177,58 +185,35 @@ def prev_logs():
     
     if msg_vlogs==True:
         
-        log_window=Tk()
-        log_window.geometry("1555x900")
+        log_window=customtkinter.CTk()
+        log_window.geometry("1300x400")
         log_window.resizable(False,False)
 
         log_window.title("Port Scanner (View Logs)")
         log_window.iconbitmap(logo_path)
-        log_window.configure(bg="white")
-
-        #Scrollable page:
-
-        #Frame 1:
-        frame1 = Frame(log_window)
-        frame1.pack(fill=BOTH, expand=1)
-
-        #Canvas1:
-        canvas1 = Canvas(frame1)
-        canvas1.pack(side=LEFT, fill=BOTH, expand=1)
-
-        #Scrollbar:
-        scroll_bar = ttk.Scrollbar(frame1, orient = VERTICAL, command = canvas1.yview)
-        scroll_bar.pack(side=RIGHT, fill=Y)
-
-        #Canvas2:
-        canvas1.configure(yscrollcommand=scroll_bar.set)
         
-        #binding configure to event e which is the action of scrolling in lambda function
-        canvas1.bind("<Configure>", lambda e: canvas1.configure(scrollregion=canvas1.bbox("all")))
-
-        #Frame 2:
-        frame2 = Frame(canvas1)
-
-        #Add frame 2 inside canvas:
-        canvas1.create_window((0,0), window= frame2, anchor="nw")
         
-        #Output CSV file
+        #Output Database Table using Treeview
         
-        with open(file_path, newline="") as logged_file:
-            reader= csv.reader(logged_file)
-            i=0
-            for row in reader:
-                
-                j=0
-                for col in row:
-                    
-                    label_op = Label(frame2, width = 200, height=2, text=row, relief= RIDGE, bg="Black", fg="White", font=("Helvetica", 10,"bold"))
-                    label_op.grid(row=i, column =0)
-                    j=j+1
-                i=i+1
+        tv = ttk.Treeview(log_window, columns=(1,2,3,4,5,6,7,8), show="headings", height="25")
+        tv.pack()
         
-        logged_file.close()
-        label_details = Label(log_window, text = "Log Details 🔎:", fg="White", bg="Black", font=("Papyrus", 30, "bold")).place(relx=0.001, rely = 0.00175)
-        lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
+        tv.heading(1, text="ID")
+        tv.heading(2, text="Date/Time")
+        tv.heading(3, text="Target Name")
+        tv.heading(4, text="Target IP")
+        tv.heading(5, text="Start Port")
+        tv.heading(6, text="End Port")
+        tv.heading(7, text="Open Ports")
+        tv.heading(8, text="Time Taken(s)")
+        
+        sql = "SELECT * FROM  logs"
+        cursor1.execute(sql)
+        rows = cursor1.fetchall()
+        
+        for i in rows:
+            tv.insert('','end', values=i)
+        
         log_window.mainloop()
     else:
         pass
@@ -260,76 +245,71 @@ def exit_prog():
     else:
         pass
   
-
 #widgets:
 
-lbl_header=Label(main_window, text = "🔎ort Scanner",bg="black", fg="Green", font=header_font)
+lbl_header=customtkinter.CTkLabel(main_window, text = "🔎ort Scanner", font=header_font)
 lbl_header.place(relx=0.5,rely=0.110,anchor=CENTER)
 
-lbl_text1=Label(main_window, text = "Enter the required details below:", bg="black", fg ="white", font=sub_font)
+lbl_text1=customtkinter.CTkLabel(main_window, text = "Enter the required details below:", font=sub_font)
 lbl_text1.place(relx=0.5,rely=0.250, anchor=CENTER)
 
 #Target name:
 
-lbl_name=Label(main_window, text="👉 Target Name:", bg="black", fg="Green", font=normal_font)
+lbl_name=customtkinter.CTkLabel(main_window, text="👉 Target Name:", font=normal_font)
 lbl_name.place(relx=0.075,rely=0.370)
 
 #target name input box:
 
-text_name=Entry(main_window, font=input_font, textvariable=namebox)
+text_name=customtkinter.CTkEntry(main_window, font=input_font, textvariable=namebox, width=250, border_width=1, text_color="red")
 text_name.place(relx=0.480,rely=0.370)
 text_name.focus()
 
 #Target IP:
 
-lbl_ip=Label(main_window, text="👉 Target IP Address:", bg="black", fg="Green", font=normal_font)
+lbl_ip=customtkinter.CTkLabel(main_window, text="👉 Target IP Address:", font=normal_font)
 lbl_ip.place(relx=0.075,rely=0.470)
 
 #IP addr input box:
 
-text_ip=Entry(main_window, font=input_font, textvariable=ipbox)
+text_ip=customtkinter.CTkEntry(main_window, font=input_font, textvariable=ipbox, width=250, border_width=1, text_color="red")
 text_ip.place(relx=0.480,rely=0.470)
 
 #Start Port:
 
-lbl_port1=Label(main_window, text="👉 Start Port Number:", bg="black", fg="Green", font=normal_font)
+lbl_port1=customtkinter.CTkLabel(main_window, text="👉 Start Port Number:", font=normal_font)
 lbl_port1.place(relx=0.075,rely=0.570)
 
 #Start port input box:
 
-text_box1=Entry(main_window,font=input_font, width = 7, textvariable=spbox)
+text_box1=customtkinter.CTkEntry(main_window,font=input_font, textvariable=spbox, border_width=1, text_color="red")
 text_box1.place(relx=0.480,rely=0.570)
 text_box1.delete(0,END)
 
 #End Port:
 
-lbl_port2=Label(main_window, text="👉 End Port Number: ", bg="black", fg="Green", font=normal_font)
+lbl_port2=customtkinter.CTkLabel(main_window, text="👉 End Port Number: ", font=normal_font)
 lbl_port2.place(relx=0.075,rely=0.670)
 
 #End port input box:
 
-text_box2=Entry(main_window,font=input_font, width = 7, textvariable=epbox)
+text_box2=customtkinter.CTkEntry(main_window,font=input_font, textvariable=epbox, border_width=1, text_color="red")
 text_box2.place(relx=0.480,rely=0.670)
 text_box2.delete(0,END)
 
 
-#Frame
-button_frame= Frame(main_window, bg="black")
-button_frame.place(relx=0.5,rely=0.850, anchor=CENTER)
-
 #buttons:
 
-bt_scan=ttk.Button(button_frame, text="Scan 🔎", command=scan_res)
-bt_scan.grid(row=0,column=0,padx=30)   #place(relx=0.185,rely=0.810)
+bt_scan=customtkinter.CTkButton(main_window, text="Scan 🔎", command=scan_res, corner_radius=18, height =40, font=("Papyrus", 20, "bold"), text_color="gold")
+#bt_scan.grid(row=0,column=0,padx=30)   
+bt_scan.place(relx=0.185,rely=0.780)
 
-bt_logs=ttk.Button(button_frame, text="View Logs", command= prev_logs)
-bt_logs.grid(row=0,column=1,padx=30)
+bt_logs=customtkinter.CTkButton(main_window, text="View Logs 📜", command= prev_logs, corner_radius=18, height =40, font=("Papyrus", 20, "bold"))
+bt_logs.place(relx= 0.575, rely =0.780)
+bt_reset=customtkinter.CTkButton(main_window, text="Reset", command=re_set, corner_radius=18, height =40, font=("Papyrus", 20, "bold"))
+bt_reset.place(relx=0.185,rely=0.870)
 
-bt_reset=ttk.Button(button_frame, text="Reset", command=re_set)
-bt_reset.grid(row=0,column=2,padx=30)    #place(relx=0.440,rely=0.810)
-
-bt_exit=ttk.Button(button_frame, text="Exit", command= exit_prog)
-bt_exit.grid(row=0,column=3,padx=30)     #place(relx=0.695,rely=0.810)
+bt_exit=customtkinter.CTkButton(main_window, text="Exit", command= exit_prog, corner_radius=18, height =40, font=("Papyrus", 20, "bold"))
+bt_exit.place(relx=0.605,rely=0.870)
 
 #right click pop-up menu:
 
@@ -353,9 +333,20 @@ def menupopup(event):
     
 main_window.bind("<Button-3>", menupopup)
 
+
+#Window Theme (Dark Mode/Light Mode)
+def change_appearance_mode_event(new_appearance_mode: str):
+        customtkinter.set_appearance_mode(new_appearance_mode)
+
+
+appearance_mode_optionemenu = customtkinter.CTkOptionMenu(main_window, values=["Light", "Dark", "System"],command=change_appearance_mode_event, font=("Papyrus", 16, "bold"))
+appearance_mode_optionemenu.place(relx=0.75,rely=0.015)
+#default
+appearance_mode_optionemenu.set("Dark")
+
 #footer:
 
-lbl_CR=Label(main_window, text="Copyright © 2022   Parth Dhungana, All Rights Reserved.", bg="Green", fg="black", padx=150, font=footer_font)
+lbl_CR=customtkinter.CTkLabel(main_window, text="Copyright © 2023   Parth Dhungana, All Rights Reserved.", padx=150, font=footer_font)
 lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
 
 #MenuBar:
@@ -374,3 +365,4 @@ main_window.config(menu=menubar)
 #screen loop:
 
 main_window.mainloop()
+
