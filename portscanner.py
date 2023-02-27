@@ -16,7 +16,14 @@ from tkinter import messagebox
 
 #logo path
 
-logo_path=""
+logo_path="det2.ico"
+
+#file path
+
+file_path="logs.csv"
+
+
+#main windown (root) properties:
 
 main_window=Tk()
 main_window.geometry("600x600")
@@ -63,30 +70,61 @@ def scan_res():
 ###########################################################################################################################################################################################################################################################################################################################################
 
     else:
-         res_window=Tk()
-         res_window.geometry("1200x720")
-         res_window.resizable(False,False)
 
-         res_window.title("Port Scanner (Scan Results)")
-         res_window.iconbitmap(logo_path)
-         res_window.configure(bg="black")
-        
-         lbl_header1=Label(res_window, text = "Scan results 🔎",bg="black", fg="Green", font=("Papyrus", 30,"bold"))
-         lbl_header1.place(relx=0.5,rely=0.110,anchor=CENTER)
-       
-        #output display
-        
-         lbl_op=Label(res_window, text=op_results, fg="Black", bg="Green",font=("Papyrus", 16,"bold"))
-         lbl_op.place(relx=0.5,rely=0.505, anchor=CENTER)
-        
-         bt_exit_res=ttk.Button(res_window, text="Exit", command= res_window.destroy)
-         bt_exit_res.place(relx=0.695,rely=0.810)
-        
-        #op_text.place(relx=0.5,rely=0.5,anchor=CENTER)
-         lbl_CR=Label(res_window, text="Copyright © 2022   Parth Dhungana, All Rights Reserved.", bg="Green", fg="black", padx=400, font=("Papyrus", 11,"bold"))
-         lbl_CR.place(relx=0.5,rely=0.980,anchor=CENTER)
+                                                                                                    #PORT SCANNER (MAIN)
 
-         res_window.mainloop()
+        target = ipbox.get()
+        queue = Queue()
+        open_ports=[]
+        
+        display_dt=datetime.datetime.now()
+        c_dt=display_dt.strftime("%c")
+        
+        start_time = time.time()
+
+        def scanner(port):
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((target, port))
+                return True
+            
+            except:
+                return False
+        
+        def queue_range(port_lst):
+            for port in port_lst:
+                queue.put(port)
+                
+        def thread_func():
+            while not queue.empty():
+                port = queue.get()
+                if scanner(port):
+                    open_scanned=print("Port #{} is open!".format(port))
+                    open_ports.append(port)
+                    
+
+        port_lst = range(spbox.get(),epbox.get()+1)
+        queue_range(port_lst)
+
+        thread_lst = []
+
+        for t in range(1000):
+            thread=threading.Thread(target = thread_func)
+            thread_lst.append(thread)
+            
+        for thread in thread_lst:
+            thread.start()
+            
+        for thread in thread_lst:
+            thread.join()
+
+        end_time = time.time()
+        
+        elapsed_time = end_time-start_time
+        
+        op_results=("{} \n\nTarget Name: {} \n\n{} OPEN PORTS FOUND!!!\n\nPorts open on: {} \n\nTime elapsed: {} seconds.\n").format(c_dt,namebox.get(),len(open_ports),open_ports,elapsed_time)
+
+
 
  #widgets:
 
